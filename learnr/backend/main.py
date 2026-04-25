@@ -36,7 +36,7 @@ SYSTEM_PROMPT = """You are Learnr, a friendly and adaptive learning assistant. Y
 async def chat(request: ChatRequest):
     try:
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name="gemini-3.1-pro-preview",
             system_instruction=SYSTEM_PROMPT
         )
         response = model.generate_content(request.message)
