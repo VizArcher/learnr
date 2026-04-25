@@ -3,3 +3,5 @@ uvicorn==0.27.1
 pydantic==2.6.3
 python-dotenv==1.0.1
 google-generativeai
+google-cloud-storage
+google-cloud-logging

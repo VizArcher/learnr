@@ -418,6 +418,7 @@
         // File State
         let currentFileContent = null;
         let currentFileType = null;
+        let currentFileName = null;
 
         function scrollToBottom() {
             chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -454,6 +455,7 @@
             chatPanel.classList.remove('split');
             currentFileContent = null;
             currentFileType = null;
+            currentFileName = null;
             fileContentArea.innerHTML = '';
         }
 
@@ -502,6 +504,7 @@
                 return;
             }
 
+            currentFileName = file.name;
             openFilePanel(file.name);
             fileContentArea.innerHTML = '<div class="loader"></div>';
 
@@ -642,6 +645,7 @@
             if (currentFileContent) {
                 payload.file_content = currentFileContent;
                 payload.file_type = currentFileType;
+                payload.filename = currentFileName;
             }
 
             try {
@@ -656,6 +660,10 @@
                 const data = await response.json();
                 typingIndicator.style.display = 'none';
                 
+                if (data.gcs_uri) {
+                    console.log('File successfully uploaded to GCS:', data.gcs_uri);
+                }
+
                 if (data.reply && data.reply.startsWith('Error processing')) {
                     addMessage(data.reply, 'error');
                 } else {
