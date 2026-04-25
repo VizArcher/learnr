@@ -1,0 +1,14 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: learnr-backend
+spec:
+  template:
+    spec:
+      containers:
+      - image: gcr.io/YOUR_PROJECT_ID/learnr-backend
+        ports:
+        - containerPort: 8080
+        env:
+        - name: ANTHROPIC_API_KEY
+          value: "YOUR_API_KEY_HERE"

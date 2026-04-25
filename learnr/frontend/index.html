@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learnr</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f9fafb;
+            --chat-bg: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --user-msg: #e0e7ff;
+            --bot-msg: #f3f4f6;
+            --border: #e5e7eb;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 600px;
+            height: 90vh;
+            background-color: var(--chat-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .chat-header h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .chat-header p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background-color: var(--user-msg);
+            color: var(--primary-hover);
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.bot {
+            align-self: flex-start;
+            background-color: var(--bot-msg);
+            color: var(--text-main);
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-input-area {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            outline: none;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        .chat-input:focus {
+            border-color: var(--primary);
+        }
+
+        .send-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 24px;
+            padding: 0 24px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-family: inherit;
+        }
+
+        .send-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .send-btn:disabled {
+            background-color: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        /* Markdown styling for bot messages */
+        .message.bot p { margin-bottom: 8px; }
+        .message.bot p:last-child { margin-bottom: 0; }
+        .message.bot code { background: #e5e7eb; padding: 2px 4px; border-radius: 4px; font-family: monospace; }
+        .message.bot pre { background: #1f2937; color: #f9fafb; padding: 12px; border-radius: 8px; overflow-x: auto; margin-top: 8px; }
+        .message.bot pre code { background: none; color: inherit; padding: 0; }
+        
+        .loading {
+            align-self: flex-start;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            display: none;
+            padding: 0 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="chat-header">
+        <h1>Learnr</h1>
+        <p>Your intelligent learning assistant</p>
+    </div>
+    
+    <div class="chat-messages" id="chatMessages">
+        <div class="message bot">
+            Hello! I'm Learnr. What concept would you like to explore today?
+        </div>
+    </div>
+    
+    <div class="loading" id="loadingIndicator">Learnr is thinking...</div>
+
+    <div class="chat-input-area">
+        <input type="text" class="chat-input" id="messageInput" placeholder="Type your message..." autocomplete="off">
+        <button class="send-btn" id="sendBtn">Send</button>
+    </div>
+</div>
+
+<script>
+    const chatMessages = document.getElementById('chatMessages');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+
+    // Generate a simple session ID
+    const sessionId = Math.random().toString(36).substring(2, 15);
+    const API_URL = 'http://localhost:8000/chat';
+
+    function addMessage(text, sender) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${sender}`;
+        
+        // Very basic text to HTML for newlines
+        // In a real app we'd use a markdown parser like marked.js
+        msgDiv.innerHTML = text.replace(/\n/g, '<br>');
+        
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    async function sendMessage() {
+        const text = messageInput.value.trim();
+        if (!text) return;
+
+        // Add user message
+        addMessage(text, 'user');
+        messageInput.value = '';
+        
+        // Disable input
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+        loadingIndicator.style.display = 'block';
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: text,
+                    session_id: sessionId
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const data = await response.json();
+            addMessage(data.reply, 'bot');
+            
+        } catch (error) {
+            console.error('Error:', error);
+            addMessage('Sorry, I encountered an error. Is the backend server running?', 'bot');
+        } finally {
+            // Re-enable input
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
+            loadingIndicator.style.display = 'none';
+            messageInput.focus();
+        }
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+</script>
+
+</body>
+</html>
