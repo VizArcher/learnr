@@ -13,6 +13,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
 
     <style>
         :root {
@@ -426,14 +427,14 @@
             const msgDiv = document.createElement('div');
             msgDiv.className = `message ${type}`;
             
-            if(type === 'bot' && window.marked) {
-                msgDiv.innerHTML = marked.parse(text);
-            } else if (type === 'system-pill') {
-                msgDiv.innerText = text;
-            } else if (type === 'user') {
-                msgDiv.innerText = text;
+            if(type === 'bot' && window.marked && window.DOMPurify) {
+                // Sanitize AI response markdown rendering to prevent XSS
+                msgDiv.innerHTML = DOMPurify.sanitize(marked.parse(text));
+            } else if (type === 'system-pill' || type === 'user' || type === 'error') {
+                // Strictly use textContent for user/system messages to prevent HTML injection
+                msgDiv.textContent = text;
             } else {
-                msgDiv.innerHTML = text.replace(/\n/g, '<br>');
+                msgDiv.textContent = text;
             }
             
             chatContainer.insertBefore(msgDiv, typingIndicator);
@@ -477,11 +478,27 @@
         });
 
         async function handleFile(file) {
-            const validExts = ['.pdf', '.txt', '.md', '.png', '.jpg', '.jpeg'];
-            const fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+            // Validate File Size (Max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                addMessage(`File too large: ${file.name} exceeds the 5MB limit.`, 'error');
+                return;
+            }
+
+            // Strict MIME Type Validation
+            const validMimeTypes = [
+                'application/pdf', 
+                'text/plain', 
+                'text/markdown', 
+                'image/png', 
+                'image/jpeg', 
+                'image/jpg'
+            ];
             
-            if (!validExts.includes(fileExt)) {
-                addMessage(`Unsupported file format: ${fileExt}`, 'error');
+            const fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+
+            // .md files sometimes have empty MIME types depending on OS
+            if (!validMimeTypes.includes(file.type) && !(fileExt === '.md' && file.type === '')) {
+                addMessage(`Unsupported file type: ${file.type || 'Unknown'}. Please upload PDF, TXT, MD, PNG, or JPEG.`, 'error');
                 return;
             }
 
