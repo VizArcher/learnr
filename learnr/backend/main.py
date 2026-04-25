@@ -1,6 +1,7 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import google.generativeai as genai
 from dotenv import load_dotenv
@@ -35,7 +36,7 @@ SYSTEM_PROMPT = """You are Learnr, a friendly and adaptive learning assistant. Y
 async def chat(request: ChatRequest):
     try:
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name="gemini-3.1-pro-preview",
             system_instruction=SYSTEM_PROMPT
         )
         response = model.generate_content(request.message)
@@ -43,3 +44,7 @@ async def chat(request: ChatRequest):
         return ChatResponse(reply=reply_text)
     except Exception as e:
         return ChatResponse(reply=f"Error processing your request: {str(e)}")
+
+# Mount the frontend directory to serve the static HTML file
+frontend_dir = os.path.join(os.path.dirname(__file__), "..", "frontend")
+app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
