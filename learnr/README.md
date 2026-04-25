@@ -3,7 +3,7 @@ An intelligent learning assistant web app.
 
 ## Setup
 
-1. Add your Anthropic API Key to `backend/.env`.
+1. Add your Google Gemini API Key to `backend/.env`.
 2. Start the backend:
    ```bash
    cd backend

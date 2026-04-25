@@ -10,5 +10,5 @@ spec:
         ports:
         - containerPort: 8080
         env:
-        - name: ANTHROPIC_API_KEY
+        - name: GEMINI_API_KEY
           value: "YOUR_API_KEY_HERE"
